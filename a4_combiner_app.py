@@ -51,6 +51,8 @@ def render_header():
 
 render_header()
 
+st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+
 
 if "images" not in st.session_state:
     st.session_state.images = []

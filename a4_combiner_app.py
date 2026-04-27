@@ -199,7 +199,7 @@ with col_mid:
     def generate_preview(page):
         full = generate_page(page, draw_boxes=True)
         preview = full.copy()
-        preview.thumbnail((375, 531))
+        preview.thumbnail((370, 524))
         return preview
 
     if st.session_state.images:

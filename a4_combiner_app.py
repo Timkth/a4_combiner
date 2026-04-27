@@ -21,11 +21,11 @@ if "page" not in st.session_state:
 if "margin" not in st.session_state:
     st.session_state.margin = 0
 
-if "tracked_files" not in st.session_state:
-    st.session_state.tracked_files = set()
+if "uploaded_once" not in st.session_state:
+    st.session_state.uploaded_once = set()
 
 
-# ---------------- UPLOAD (FIXED DUPLICATION BUG) ---------------- #
+# ---------------- UPLOAD (FIXED: NO RE-ADDING BUG) ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
@@ -35,17 +35,16 @@ uploaded = st.file_uploader(
 
 if uploaded:
     for file in uploaded:
-        # Only add if not already present OR previously removed
-        if file.name not in st.session_state.tracked_files:
+        if file.name not in st.session_state.uploaded_once:
             st.session_state.images.append(file)
-            st.session_state.tracked_files.add(file.name)
+            st.session_state.uploaded_once.add(file.name)
 
 
-# ---------------- IMAGE FIT (NO CROPPING) ---------------- #
+# ---------------- IMAGE FIT (NO CROPPING, ASPECT SAFE) ---------------- #
 def fit_inside(img, tw, th):
     img = img.convert("RGB")
 
-    img.thumbnail((tw, th))  # keeps aspect ratio
+    img.thumbnail((tw, th))
 
     canvas = Image.new("RGB", (tw, th), "white")
 
@@ -113,7 +112,7 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- REMOVE IMAGES (FIXED STATE BUG) ---------------- #
+# ---------------- REMOVE IMAGES (FIXED) ---------------- #
 st.subheader("Loaded Images")
 
 for idx in range(len(st.session_state.images)):
@@ -125,10 +124,7 @@ for idx in range(len(st.session_state.images)):
     with col2:
         if st.button("❌", key=f"rm_{idx}"):
             removed = st.session_state.images.pop(idx)
-
-            # IMPORTANT: allow re-upload after deletion
-            st.session_state.tracked_files.discard(removed.name)
-
+            st.session_state.uploaded_once.discard(removed.name)
             st.rerun()
 
 
@@ -141,35 +137,42 @@ with c1:
         removed = st.session_state.images[start:start + IMAGES_PER_PAGE]
 
         for f in removed:
-            st.session_state.tracked_files.discard(f.name)
+            st.session_state.uploaded_once.discard(f.name)
 
         st.session_state.images = (
             st.session_state.images[:start] +
             st.session_state.images[start + IMAGES_PER_PAGE:]
         )
+        st.rerun()
 
 with c2:
     if st.button("❌ Clear All"):
         st.session_state.images = []
-        st.session_state.tracked_files = set()
+        st.session_state.uploaded_once = set()
         st.session_state.page = 0
+        st.rerun()
 
 
-# ---------------- NAVIGATION ---------------- #
+# ---------------- NAVIGATION (FIXED SYNC) ---------------- #
 total_pages = get_total_pages()
 
 c1, c2, c3 = st.columns([1, 2, 1])
 
 with c1:
-    if st.button("⬅ Prev") and st.session_state.page > 0:
-        st.session_state.page -= 1
+    if st.button("⬅ Prev"):
+        if st.session_state.page > 0:
+            st.session_state.page -= 1
+            st.rerun()
 
 with c2:
-    st.write(f"Page {st.session_state.page + 1} / {total_pages}")
+    current_page = st.session_state.page + 1
+    st.write(f"Page {current_page} / {total_pages}")
 
 with c3:
-    if st.button("Next ➡") and st.session_state.page < total_pages - 1:
-        st.session_state.page += 1
+    if st.button("Next ➡"):
+        if st.session_state.page < total_pages - 1:
+            st.session_state.page += 1
+            st.rerun()
 
 
 # ---------------- PREVIEW ---------------- #

@@ -181,7 +181,7 @@ def generate_preview(page):
 
     # create a smaller preview version
     preview = full.copy()
-    preview.thumbnail((600, 850))  # 👈 adjust this
+    preview.thumbnail((300, 425))  # 👈 adjust this
 
     return preview
 

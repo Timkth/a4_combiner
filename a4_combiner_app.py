@@ -173,10 +173,20 @@ with col_mid:
                 st.rerun()
 
     with nav2:
-        st.markdown(
-            f"<div style='text-align:center;'>Page {st.session_state.page + 1} / {pages}</div>",
-            unsafe_allow_html=True
-        )
+    st.markdown(
+        f"""
+        <div style="
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:38px;
+            font-weight:500;
+        ">
+            Page {st.session_state.page + 1} / {pages}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     with nav3:
         if st.button("Next ➡"):
@@ -188,12 +198,12 @@ with col_mid:
     def generate_preview(page):
         full = generate_page(page, draw_boxes=True)
         preview = full.copy()
-        preview.thumbnail((353, 500))
+        preview.thumbnail((400, 567))
         return preview
 
     if st.session_state.images:
         preview = generate_preview(st.session_state.page)
-        st.image(preview, use_container_width=False)
+        st.image(preview)
 
     else:
         st.info("Upload images to begin")

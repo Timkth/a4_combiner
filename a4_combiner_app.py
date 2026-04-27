@@ -190,6 +190,9 @@ with col_mid:
         )
 
     with nav3:
+        st.write("")  # small spacer
+        st.write("")  # add more spacing if needed
+
         if st.button("Next ➡"):
             if st.session_state.page < pages - 1:
                 st.session_state.page += 1

@@ -160,10 +160,14 @@ pages = get_pages()
 col_left, col_mid, col_right = st.columns([1, 2, 1])
 
 
-# ---------------- CENTER COLUMN ---------------- #
-with col_mid:
+# Outer layout (forces real centering)
+outer_left, outer_mid, outer_right = st.columns([1, 3, 1])
 
-    # --- NAVIGATION (NOW PERFECTLY ALIGNED) --- #
+with outer_mid:
+
+    pages = get_pages()
+
+    # --- NAVIGATION --- #
     nav1, nav2, nav3 = st.columns([1, 2, 1])
 
     with nav1:
@@ -203,14 +207,17 @@ with col_mid:
 
     if st.session_state.images:
         preview = generate_preview(st.session_state.page)
+
+        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         st.image(preview)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.info("Upload images to begin")
 
 
-# ---------------- RIGHT COLUMN (EXPORT) ---------------- #
-with col_right:
+# --- EXPORT (right side) --- #
+with outer_right:
     if st.session_state.images:
 
         def export_pdf():

@@ -155,68 +155,71 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- NAVIGATION ---------------- #
-pages = get_pages()
-
-c1, c2, c3 = st.columns([1, 2, 1])
-
-with c1:
-    if st.button("⬅ Prev") and st.session_state.page > 0:
-        st.session_state.page -= 1
-        st.rerun()
-
-with c2:
-    st.write(f"Page {st.session_state.page + 1} / {pages}")
-
-with c3:
-    if st.button("Next ➡") and st.session_state.page < pages - 1:
-        st.session_state.page += 1
-        st.rerun()
+# ---------------- MAIN LAYOUT ---------------- #
+col_left, col_mid, col_right = st.columns([1, 2, 1])
 
 
-# ---------------- PREVIEW ---------------- #
-def generate_preview(page):
-    # generate full A4 page first
-    full = generate_page(page, draw_boxes=True)
-
-    # create a smaller preview version
-    preview = full.copy()
-    preview.thumbnail((300, 425))  # 👈 adjust this
-
-    return preview
-
-if st.session_state.images:
-    preview = generate_preview(st.session_state.page)
-    st.image(preview)
+# --- LEFT: NAVIGATION --- #
+with col_left:
+    if st.button("⬅ Prev"):
+        if st.session_state.page > 0:
+            st.session_state.page -= 1
+            st.rerun()
 
 
-# ---------------- EXPORT ---------------- #
-def export_pdf():
-    pages_list = []
+# --- CENTER: PREVIEW --- #
+with col_mid:
+    if st.session_state.images:
+        preview = generate_preview(st.session_state.page)
+        st.image(preview)
 
-    for p in range(get_pages()):
-        pages_list.append(generate_page(p, draw_boxes=False))
-
-    buf = io.BytesIO()
-
-    pages_list[0].save(
-        buf,
-        format="PDF",
-        save_all=True,
-        append_images=pages_list[1:],
-        resolution=300
-    )
-
-    buf.seek(0)
-    return buf
+        st.markdown(
+            f"<div style='text-align:center;'>Page {st.session_state.page + 1} / {get_pages()}</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.info("Upload images to begin")
 
 
-if st.session_state.images:
-    pdf = export_pdf()
+# --- RIGHT: ACTIONS --- #
+with col_right:
+    st.markdown("### Actions")
 
-    st.download_button(
-        "📥 Download PDF",
-        pdf,
-        file_name="a4_export.pdf",
-        mime="application/pdf"
-    )
+    if st.session_state.images:
+        # EXPORT
+        def export_pdf():
+            pages = []
+            for p in range(get_pages()):
+                pages.append(generate_page(p, draw_boxes=False))
+
+            buf = io.BytesIO()
+            pages[0].save(
+                buf,
+                format="PDF",
+                save_all=True,
+                append_images=pages[1:],
+                resolution=300
+            )
+            buf.seek(0)
+            return buf
+
+        pdf = export_pdf()
+
+        st.download_button(
+            "📥 Export PDF",
+            pdf,
+            file_name="a4_export.pdf",
+            mime="application/pdf"
+        )
+
+    # RESET
+    if st.button("🗑 Reset All"):
+        reset_all()
+
+
+# --- RIGHT NAV BUTTON --- #
+with col_right:
+    if st.button("Next ➡"):
+        if st.session_state.page < get_pages() - 1:
+            st.session_state.page += 1
+            st.rerun()

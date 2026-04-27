@@ -160,20 +160,19 @@ pages = get_pages()
 # Main layout: center preview + right export
 col_left, col_mid, col_right = st.columns([1, 2, 1])
 
-
 # ---------------- CENTER COLUMN ---------------- #
 with col_mid:
 
-    # --- NAVIGATION (NOW PERFECTLY ALIGNED) --- #
-    nav1, nav2, nav3 = st.columns([1.5, 2, 1.5], vertical_alignment="center")
+    # --- NAVIGATION (PROPERLY CENTERED SYSTEM) --- #
+    nav_left, nav_center, nav_right = st.columns([1, 2, 1], vertical_alignment="center")
 
-    with nav1:
+    with nav_left:
         if st.button("⬅ Prev"):
             if st.session_state.page > 0:
                 st.session_state.page -= 1
                 st.rerun()
 
-    with nav2:
+    with nav_center:
         st.markdown(
             f"""
             <div style="
@@ -189,15 +188,10 @@ with col_mid:
             unsafe_allow_html=True
         )
 
-    with nav3:
+    with nav_right:
+        # small invisible spacer to keep symmetry
         st.markdown(
-            """
-            <div style="
-                display:flex;
-                justify-content:flex-start;
-                padding-left:150px;
-            ">
-            """,
+            "<div style='height:38px;'></div>",
             unsafe_allow_html=True
         )
 
@@ -205,8 +199,6 @@ with col_mid:
             if st.session_state.page < pages - 1:
                 st.session_state.page += 1
                 st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # --- PREVIEW --- #
     def generate_preview(page):
@@ -216,8 +208,16 @@ with col_mid:
         return preview
 
     if st.session_state.images:
+
+        st.markdown(
+            "<div style='display:flex; justify-content:center;'>",
+            unsafe_allow_html=True
+        )
+
         preview = generate_preview(st.session_state.page)
         st.image(preview)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.info("Upload images to begin")

@@ -151,23 +151,19 @@ st.session_state.margin = st.number_input(
     "Margin (px)",
     min_value=0,
     max_value=200,
-    value=st.session_state.margin
+    value=st.session_state.margin,
+    step=10
 )
 
 pages = get_pages()
 
 # Main layout: center preview + right export
-col_left, col_mid, col_right = st.columns([1, 2, 1])
-
-
-# Outer layout (forces real centering)
 outer_left, outer_mid, outer_right = st.columns([1, 3, 1])
 
+# ---------------- CENTER COLUMN ---------------- #
 with outer_mid:
 
-    pages = get_pages()
-
-    # --- NAVIGATION --- #
+    # --- NAVIGATION (NOW PERFECTLY ALIGNED) --- #
     nav1, nav2, nav3 = st.columns([1, 2, 1])
 
     with nav1:
@@ -207,7 +203,6 @@ with outer_mid:
 
     if st.session_state.images:
         preview = generate_preview(st.session_state.page)
-
         st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         st.image(preview)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -216,7 +211,7 @@ with outer_mid:
         st.info("Upload images to begin")
 
 
-# --- EXPORT (right side) --- #
+# ---------------- RIGHT COLUMN (EXPORT) ---------------- #
 with outer_right:
     if st.session_state.images:
 

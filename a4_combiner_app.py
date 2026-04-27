@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image, ImageDraw
 import io
-import hashlib
 
 # ---------------- CONFIG ---------------- #
 A4_WIDTH = 2480
@@ -14,7 +13,7 @@ IMAGES_PER_PAGE = COLS * ROWS
 
 # ---------------- STATE ---------------- #
 if "images" not in st.session_state:
-    st.session_state.images = []  # list of {hash, data}
+    st.session_state.images = []
 
 if "page" not in st.session_state:
     st.session_state.page = 0
@@ -23,12 +22,7 @@ if "margin" not in st.session_state:
     st.session_state.margin = 0
 
 
-# ---------------- HASH ---------------- #
-def make_hash(file_bytes):
-    return hashlib.md5(file_bytes).hexdigest()
-
-
-# ---------------- UPLOAD (CLEAN + SAFE) ---------------- #
+# ---------------- UPLOAD ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
@@ -38,17 +32,13 @@ uploaded = st.file_uploader(
 if uploaded:
     for file in uploaded:
         data = file.read()
-        h = make_hash(data)
 
-        # prevent duplicates safely
-        if not any(img["hash"] == h for img in st.session_state.images):
-            st.session_state.images.append({
-                "hash": h,
-                "data": data
-            })
+        # prevent duplicates by raw bytes hash
+        if not any(img["data"] == data for img in st.session_state.images):
+            st.session_state.images.append({"data": data})
 
 
-# ---------------- FIT IMAGE ---------------- #
+# ---------------- IMAGE FIT ---------------- #
 def fit_inside(img, tw, th):
     img = img.convert("RGB")
     img.thumbnail((tw, th))
@@ -62,7 +52,7 @@ def fit_inside(img, tw, th):
     return canvas
 
 
-# ---------------- PAGE RENDER ---------------- #
+# ---------------- PAGE GENERATION ---------------- #
 def generate_page(page, draw_boxes=True):
     margin = st.session_state.margin
 
@@ -105,7 +95,7 @@ def get_pages():
 
 
 # ---------------- UI ---------------- #
-st.title("📄 A4 Image Combiner (Stable Simple Version)")
+st.title("📄 A4 Image Combiner (Simple)")
 
 
 # ---------------- MARGIN ---------------- #
@@ -117,22 +107,23 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- DELETE (SAFE, NO INDEX BUGS) ---------------- #
-st.subheader("Loaded Images")
+# ---------------- CLEAR CONTROLS ---------------- #
+c1, c2 = st.columns(2)
 
-for img in st.session_state.images.copy():
-    col1, col2 = st.columns([4, 1])
+with c1:
+    if st.button("🧹 Clear Page"):
+        start = st.session_state.page * IMAGES_PER_PAGE
+        st.session_state.images = (
+            st.session_state.images[:start] +
+            st.session_state.images[start + IMAGES_PER_PAGE:]
+        )
+        st.rerun()
 
-    with col1:
-        st.image(img["data"], width=120)
-
-    with col2:
-        if st.button("❌ Remove", key=img["hash"]):
-            st.session_state.images = [
-                x for x in st.session_state.images
-                if x["hash"] != img["hash"]
-            ]
-            st.rerun()
+with c2:
+    if st.button("❌ Clear All"):
+        st.session_state.images = []
+        st.session_state.page = 0
+        st.rerun()
 
 
 # ---------------- NAVIGATION ---------------- #
@@ -161,8 +152,6 @@ if st.session_state.images:
 
 
 # ---------------- EXPORT ---------------- #
-import io
-
 def export_pdf():
     pages_list = []
 

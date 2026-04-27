@@ -189,10 +189,6 @@ with col_mid:
         )
 
     with nav_right:
-        # small invisible spacer to keep symmetry
-        st.markdown(
-            unsafe_allow_html=True
-        )
 
         if st.button("Next ➡"):
             if st.session_state.page < pages - 1:

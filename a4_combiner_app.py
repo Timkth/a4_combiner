@@ -1,6 +1,7 @@
 import streamlit as st
 from PIL import Image, ImageDraw
 import io
+import uuid
 
 # ---------------- CONFIG ---------------- #
 A4_WIDTH = 2480
@@ -13,7 +14,7 @@ IMAGES_PER_PAGE = COLS * ROWS
 
 # ---------------- STATE ---------------- #
 if "images" not in st.session_state:
-    st.session_state.images = []
+    st.session_state.images = []  # list of {"id": str, "data": bytes}
 
 if "page" not in st.session_state:
     st.session_state.page = 0
@@ -21,29 +22,29 @@ if "page" not in st.session_state:
 if "margin" not in st.session_state:
     st.session_state.margin = 0
 
-if "uploaded_once" not in st.session_state:
-    st.session_state.uploaded_once = set()
 
-
-# ---------------- UPLOAD (FIXED: NO RE-ADDING BUG) ---------------- #
+# ---------------- UPLOAD (STABLE STORAGE) ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
-    accept_multiple_files=True,
-    key="uploader"
+    accept_multiple_files=True
 )
 
 if uploaded:
     for file in uploaded:
-        if file.name not in st.session_state.uploaded_once:
-            st.session_state.images.append(file)
-            st.session_state.uploaded_once.add(file.name)
+        file_bytes = file.read()
+
+        # prevent duplicates by name + size
+        if not any(img["id"] == file.name for img in st.session_state.images):
+            st.session_state.images.append({
+                "id": file.name,
+                "data": file_bytes
+            })
 
 
-# ---------------- IMAGE FIT (NO CROPPING, ASPECT SAFE) ---------------- #
+# ---------------- IMAGE FIT ---------------- #
 def fit_inside(img, tw, th):
     img = img.convert("RGB")
-
     img.thumbnail((tw, th))
 
     canvas = Image.new("RGB", (tw, th), "white")
@@ -52,7 +53,6 @@ def fit_inside(img, tw, th):
     y = (th - img.height) // 2
 
     canvas.paste(img, (x, y))
-
     return canvas
 
 
@@ -67,7 +67,7 @@ def generate_page(page, draw_boxes=True):
     draw = ImageDraw.Draw(canvas)
 
     start = page * IMAGES_PER_PAGE
-    page_images = st.session_state.images[start:start + IMAGES_PER_PAGE]
+    page_items = st.session_state.images[start:start + IMAGES_PER_PAGE]
 
     for i in range(IMAGES_PER_PAGE):
         col = i % COLS
@@ -76,8 +76,8 @@ def generate_page(page, draw_boxes=True):
         x0 = col * (cell_w + margin)
         y0 = row * (cell_h + margin)
 
-        if i < len(page_images):
-            img = Image.open(page_images[i])
+        if i < len(page_items):
+            img = Image.open(io.BytesIO(page_items[i]["data"]))
             img = fit_inside(img, cell_w, cell_h)
             canvas.paste(img, (x0, y0))
 
@@ -99,7 +99,7 @@ def get_total_pages():
 
 
 # ---------------- UI ---------------- #
-st.title("📄 A4 Image Combiner")
+st.title("📄 A4 Image Combiner (Stable Version)")
 
 
 # ---------------- MARGIN ---------------- #
@@ -112,19 +112,18 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- REMOVE IMAGES (FIXED) ---------------- #
+# ---------------- REMOVE IMAGES (NOW WORKS RELIABLY) ---------------- #
 st.subheader("Loaded Images")
 
-for idx in range(len(st.session_state.images)):
+for i, img in enumerate(st.session_state.images):
     col1, col2 = st.columns([4, 1])
 
     with col1:
-        st.image(st.session_state.images[idx], width=120)
+        st.text(img["id"])
 
     with col2:
-        if st.button("❌", key=f"rm_{idx}"):
-            removed = st.session_state.images.pop(idx)
-            st.session_state.uploaded_once.discard(removed.name)
+        if st.button("❌", key=f"rm_{img['id']}"):
+            st.session_state.images.pop(i)
             st.rerun()
 
 
@@ -134,11 +133,6 @@ c1, c2 = st.columns(2)
 with c1:
     if st.button("🧹 Clear Page"):
         start = st.session_state.page * IMAGES_PER_PAGE
-        removed = st.session_state.images[start:start + IMAGES_PER_PAGE]
-
-        for f in removed:
-            st.session_state.uploaded_once.discard(f.name)
-
         st.session_state.images = (
             st.session_state.images[:start] +
             st.session_state.images[start + IMAGES_PER_PAGE:]
@@ -148,12 +142,11 @@ with c1:
 with c2:
     if st.button("❌ Clear All"):
         st.session_state.images = []
-        st.session_state.uploaded_once = set()
         st.session_state.page = 0
         st.rerun()
 
 
-# ---------------- NAVIGATION (FIXED SYNC) ---------------- #
+# ---------------- NAVIGATION ---------------- #
 total_pages = get_total_pages()
 
 c1, c2, c3 = st.columns([1, 2, 1])
@@ -165,8 +158,7 @@ with c1:
             st.rerun()
 
 with c2:
-    current_page = st.session_state.page + 1
-    st.write(f"Page {current_page} / {total_pages}")
+    st.write(f"Page {st.session_state.page + 1} / {total_pages}")
 
 with c3:
     if st.button("Next ➡"):

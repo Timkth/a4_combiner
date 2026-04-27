@@ -193,11 +193,11 @@ with col_mid:
 
     if st.session_state.images:
         preview = generate_preview(st.session_state.page)
-        st.image(preview)
+        st.image(preview, use_container_width=False)
+
     else:
         st.info("Upload images to begin")
 
-st.image(preview, use_container_width=False)
 
 # ---------------- RIGHT COLUMN (EXPORT) ---------------- #
 with col_right:

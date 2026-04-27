@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image, ImageDraw
 import io
-import uuid
 
 # ---------------- CONFIG ---------------- #
 A4_WIDTH = 2480
@@ -13,8 +12,8 @@ IMAGES_PER_PAGE = COLS * ROWS
 
 
 # ---------------- STATE ---------------- #
-if "images" not in st.session_state:
-    st.session_state.images = []  # list of {"id": str, "data": bytes}
+if "image_store" not in st.session_state:
+    st.session_state.image_store = []  # MAIN SOURCE OF TRUTH
 
 if "page" not in st.session_state:
     st.session_state.page = 0
@@ -22,8 +21,11 @@ if "page" not in st.session_state:
 if "margin" not in st.session_state:
     st.session_state.margin = 0
 
+if "seen_uploads" not in st.session_state:
+    st.session_state.seen_uploads = set()
 
-# ---------------- UPLOAD (STABLE STORAGE) ---------------- #
+
+# ---------------- UPLOAD (ONLY FEEDS STORE ONCE) ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
@@ -32,17 +34,15 @@ uploaded = st.file_uploader(
 
 if uploaded:
     for file in uploaded:
-        file_bytes = file.read()
-
-        # prevent duplicates by name + size
-        if not any(img["id"] == file.name for img in st.session_state.images):
-            st.session_state.images.append({
+        if file.name not in st.session_state.seen_uploads:
+            st.session_state.image_store.append({
                 "id": file.name,
-                "data": file_bytes
+                "data": file.read()
             })
+            st.session_state.seen_uploads.add(file.name)
 
 
-# ---------------- IMAGE FIT ---------------- #
+# ---------------- IMAGE FIT (NO CROPPING) ---------------- #
 def fit_inside(img, tw, th):
     img = img.convert("RGB")
     img.thumbnail((tw, th))
@@ -67,7 +67,7 @@ def generate_page(page, draw_boxes=True):
     draw = ImageDraw.Draw(canvas)
 
     start = page * IMAGES_PER_PAGE
-    page_items = st.session_state.images[start:start + IMAGES_PER_PAGE]
+    items = st.session_state.image_store[start:start + IMAGES_PER_PAGE]
 
     for i in range(IMAGES_PER_PAGE):
         col = i % COLS
@@ -76,8 +76,8 @@ def generate_page(page, draw_boxes=True):
         x0 = col * (cell_w + margin)
         y0 = row * (cell_h + margin)
 
-        if i < len(page_items):
-            img = Image.open(io.BytesIO(page_items[i]["data"]))
+        if i < len(items):
+            img = Image.open(io.BytesIO(items[i]["data"]))
             img = fit_inside(img, cell_w, cell_h)
             canvas.paste(img, (x0, y0))
 
@@ -93,13 +93,13 @@ def generate_page(page, draw_boxes=True):
 
 # ---------------- PAGE COUNT ---------------- #
 def get_total_pages():
-    if not st.session_state.images:
+    if not st.session_state.image_store:
         return 1
-    return (len(st.session_state.images) - 1) // IMAGES_PER_PAGE + 1
+    return (len(st.session_state.image_store) - 1) // IMAGES_PER_PAGE + 1
 
 
 # ---------------- UI ---------------- #
-st.title("📄 A4 Image Combiner (Stable Version)")
+st.title("📄 A4 Image Combiner (Stable Architecture)")
 
 
 # ---------------- MARGIN ---------------- #
@@ -112,10 +112,10 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- REMOVE IMAGES (NOW WORKS RELIABLY) ---------------- #
+# ---------------- REMOVE (ONLY WORKS ON STORE) ---------------- #
 st.subheader("Loaded Images")
 
-for i, img in enumerate(st.session_state.images):
+for i, img in enumerate(st.session_state.image_store):
     col1, col2 = st.columns([4, 1])
 
     with col1:
@@ -123,7 +123,8 @@ for i, img in enumerate(st.session_state.images):
 
     with col2:
         if st.button("❌", key=f"rm_{img['id']}"):
-            st.session_state.images.pop(i)
+            st.session_state.image_store.pop(i)
+            st.session_state.seen_uploads.discard(img["id"])
             st.rerun()
 
 
@@ -133,15 +134,19 @@ c1, c2 = st.columns(2)
 with c1:
     if st.button("🧹 Clear Page"):
         start = st.session_state.page * IMAGES_PER_PAGE
-        st.session_state.images = (
-            st.session_state.images[:start] +
-            st.session_state.images[start + IMAGES_PER_PAGE:]
+        for img in st.session_state.image_store[start:start + IMAGES_PER_PAGE]:
+            st.session_state.seen_uploads.discard(img["id"])
+
+        st.session_state.image_store = (
+            st.session_state.image_store[:start] +
+            st.session_state.image_store[start + IMAGES_PER_PAGE:]
         )
         st.rerun()
 
 with c2:
     if st.button("❌ Clear All"):
-        st.session_state.images = []
+        st.session_state.image_store = []
+        st.session_state.seen_uploads = set()
         st.session_state.page = 0
         st.rerun()
 
@@ -168,7 +173,7 @@ with c3:
 
 
 # ---------------- PREVIEW ---------------- #
-if st.session_state.images:
+if st.session_state.image_store:
     preview = generate_page(st.session_state.page, draw_boxes=True)
     st.image(preview, use_container_width=True)
 
@@ -194,7 +199,7 @@ def export_pdf():
     return buf
 
 
-if st.session_state.images:
+if st.session_state.image_store:
     pdf = export_pdf()
 
     st.download_button(

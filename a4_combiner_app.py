@@ -195,7 +195,7 @@ with col_mid:
             <div style="
                 display:flex;
                 justify-content:flex-start;
-                padding-left:20px;
+                padding-left:50px;
             ">
             """,
             unsafe_allow_html=True

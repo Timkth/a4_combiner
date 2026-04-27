@@ -151,8 +151,8 @@ st.session_state.margin = st.number_input(
     "Margin (px)",
     min_value=0,
     max_value=200,
-    value=st.session_state.margin,
-    step=10
+    step=10,
+    key="margin"
 )
 
 pages = get_pages()

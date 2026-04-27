@@ -12,6 +12,8 @@ IMAGES_PER_PAGE = COLS * ROWS
 
 
 # ---------------- STATE ---------------- #
+st.set_page_config(layout="wide")
+
 if "images" not in st.session_state:
     st.session_state.images = []
 

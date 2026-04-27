@@ -173,20 +173,20 @@ with col_mid:
                 st.rerun()
 
     with nav2:
-    st.markdown(
-        f"""
-        <div style="
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:38px;
-            font-weight:500;
-        ">
-            Page {st.session_state.page + 1} / {pages}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            f"""
+            <div style="
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                height:38px;
+                font-weight:500;
+            ">
+                Page {st.session_state.page + 1} / {pages}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     with nav3:
         if st.button("Next ➡"):

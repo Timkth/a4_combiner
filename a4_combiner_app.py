@@ -21,23 +21,27 @@ if "page" not in st.session_state:
 if "margin" not in st.session_state:
     st.session_state.margin = 0
 
+if "tracked_files" not in st.session_state:
+    st.session_state.tracked_files = set()
 
-# ---------------- UPLOAD (NO DUPLICATES) ---------------- #
+
+# ---------------- UPLOAD (FIXED DUPLICATION BUG) ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
-    accept_multiple_files=True
+    accept_multiple_files=True,
+    key="uploader"
 )
 
 if uploaded:
-    existing = {f.name for f in st.session_state.images}
-
     for file in uploaded:
-        if file.name not in existing:
+        # Only add if not already present OR previously removed
+        if file.name not in st.session_state.tracked_files:
             st.session_state.images.append(file)
+            st.session_state.tracked_files.add(file.name)
 
 
-# ---------------- FIT INSIDE (NO CROPPING) ---------------- #
+# ---------------- IMAGE FIT (NO CROPPING) ---------------- #
 def fit_inside(img, tw, th):
     img = img.convert("RGB")
 
@@ -99,7 +103,7 @@ def get_total_pages():
 st.title("📄 A4 Image Combiner")
 
 
-# ---------------- MARGIN (FIXED INPUT) ---------------- #
+# ---------------- MARGIN ---------------- #
 st.session_state.margin = st.number_input(
     "Margin (px)",
     min_value=0,
@@ -109,18 +113,22 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- REMOVE IMAGES (WORKING + STABLE) ---------------- #
+# ---------------- REMOVE IMAGES (FIXED STATE BUG) ---------------- #
 st.subheader("Loaded Images")
 
 for idx in range(len(st.session_state.images)):
-    cols = st.columns([4, 1])
+    col1, col2 = st.columns([4, 1])
 
-    with cols[0]:
+    with col1:
         st.image(st.session_state.images[idx], width=120)
 
-    with cols[1]:
+    with col2:
         if st.button("❌", key=f"rm_{idx}"):
-            st.session_state.images.pop(idx)
+            removed = st.session_state.images.pop(idx)
+
+            # IMPORTANT: allow re-upload after deletion
+            st.session_state.tracked_files.discard(removed.name)
+
             st.rerun()
 
 
@@ -130,6 +138,11 @@ c1, c2 = st.columns(2)
 with c1:
     if st.button("🧹 Clear Page"):
         start = st.session_state.page * IMAGES_PER_PAGE
+        removed = st.session_state.images[start:start + IMAGES_PER_PAGE]
+
+        for f in removed:
+            st.session_state.tracked_files.discard(f.name)
+
         st.session_state.images = (
             st.session_state.images[:start] +
             st.session_state.images[start + IMAGES_PER_PAGE:]
@@ -138,6 +151,7 @@ with c1:
 with c2:
     if st.button("❌ Clear All"):
         st.session_state.images = []
+        st.session_state.tracked_files = set()
         st.session_state.page = 0
 
 

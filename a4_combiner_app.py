@@ -107,25 +107,6 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- CLEAR CONTROLS ---------------- #
-c1, c2 = st.columns(2)
-
-with c1:
-    if st.button("🧹 Clear Page"):
-        start = st.session_state.page * IMAGES_PER_PAGE
-        st.session_state.images = (
-            st.session_state.images[:start] +
-            st.session_state.images[start + IMAGES_PER_PAGE:]
-        )
-        st.rerun()
-
-with c2:
-    if st.button("❌ Clear All"):
-        st.session_state.images = []
-        st.session_state.page = 0
-        st.rerun()
-
-
 # ---------------- NAVIGATION ---------------- #
 pages = get_pages()
 

@@ -155,7 +155,23 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- MAIN LAYOUT ---------------- #
+# ---------------- PREVIEW ---------------- #
+def generate_preview(page):
+    # generate full A4 page first
+    full = generate_page(page, draw_boxes=True)
+
+    # create a smaller preview version
+    preview = full.copy()
+    preview.thumbnail((353, 500))  # 👈 adjust this
+
+    return preview
+
+if st.session_state.images:
+    preview = generate_preview(st.session_state.page)
+    st.image(preview)
+
+
+    # ---------------- MAIN LAYOUT ---------------- #
 col_left, col_mid, col_right = st.columns([1, 2, 1])
 
 
@@ -211,10 +227,6 @@ with col_right:
             file_name="a4_export.pdf",
             mime="application/pdf"
         )
-
-    # RESET
-    if st.button("🗑 Reset All"):
-        reset_all()
 
 
 # --- RIGHT NAV BUTTON --- #

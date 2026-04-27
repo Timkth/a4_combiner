@@ -191,7 +191,6 @@ with col_mid:
     with nav_right:
         # small invisible spacer to keep symmetry
         st.markdown(
-            "<div style='height:38px;'></div>",
             unsafe_allow_html=True
         )
 

@@ -175,9 +175,19 @@ with c3:
 
 
 # ---------------- PREVIEW ---------------- #
+def generate_preview(page):
+    # generate full A4 page first
+    full = generate_page(page, draw_boxes=True)
+
+    # create a smaller preview version
+    preview = full.copy()
+    preview.thumbnail((600, 850))  # 👈 adjust this
+
+    return preview
+
 if st.session_state.images:
-    preview = generate_page(st.session_state.page, draw_boxes=True)
-    st.image(preview, use_container_width=True)
+    preview = generate_preview(st.session_state.page)
+    st.image(preview)
 
 
 # ---------------- EXPORT ---------------- #

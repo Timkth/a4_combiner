@@ -165,7 +165,7 @@ col_left, col_mid, col_right = st.columns([1, 2, 1])
 with col_mid:
 
     # --- NAVIGATION (NOW PERFECTLY ALIGNED) --- #
-    nav1, nav2, nav3 = st.columns([1.5, 2, 0.5], vertical_alignment="center")
+    nav1, nav2, nav3 = st.columns([1.5, 2, 1], vertical_alignment="center")
 
     with nav1:
         if st.button("⬅ Prev"):

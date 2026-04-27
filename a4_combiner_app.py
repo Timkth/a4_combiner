@@ -147,7 +147,7 @@ def get_pages():
 
 
 # ---------------- MARGIN ---------------- #
-st.session_state.margin = st.number_input(
+st.number_input(
     "Margin (px)",
     min_value=0,
     max_value=200,

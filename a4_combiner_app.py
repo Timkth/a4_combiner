@@ -11,7 +11,7 @@ ROWS = 4
 IMAGES_PER_PAGE = COLS * ROWS
 
 
-# ---------------- SESSION STATE ---------------- #
+# ---------------- STATE ---------------- #
 if "images" not in st.session_state:
     st.session_state.images = []
 
@@ -37,26 +37,20 @@ if uploaded:
             st.session_state.images.append(file)
 
 
-# ---------------- IMAGE FIT (NO DISTORTION, NO GAPS) ---------------- #
-def crop_to_fill(img, tw, th):
+# ---------------- FIT INSIDE (NO CROPPING) ---------------- #
+def fit_inside(img, tw, th):
     img = img.convert("RGB")
 
-    img_ratio = img.width / img.height
-    target_ratio = tw / th
+    img.thumbnail((tw, th))  # keeps aspect ratio
 
-    if img_ratio > target_ratio:
-        new_h = th
-        new_w = int(th * img_ratio)
-    else:
-        new_w = tw
-        new_h = int(tw / img_ratio)
+    canvas = Image.new("RGB", (tw, th), "white")
 
-    img = img.resize((new_w, new_h), Image.LANCZOS)
+    x = (tw - img.width) // 2
+    y = (th - img.height) // 2
 
-    left = (new_w - tw) // 2
-    top = (new_h - th) // 2
+    canvas.paste(img, (x, y))
 
-    return img.crop((left, top, left + tw, top + th))
+    return canvas
 
 
 # ---------------- PAGE GENERATION ---------------- #
@@ -81,7 +75,7 @@ def generate_page(page, draw_boxes=True):
 
         if i < len(page_images):
             img = Image.open(page_images[i])
-            img = crop_to_fill(img, cell_w, cell_h)
+            img = fit_inside(img, cell_w, cell_h)
             canvas.paste(img, (x0, y0))
 
         if draw_boxes:
@@ -105,7 +99,7 @@ def get_total_pages():
 st.title("📄 A4 Image Combiner")
 
 
-# ---------------- MARGIN (FIXED: NUMBER INPUT) ---------------- #
+# ---------------- MARGIN (FIXED INPUT) ---------------- #
 st.session_state.margin = st.number_input(
     "Margin (px)",
     min_value=0,
@@ -115,23 +109,19 @@ st.session_state.margin = st.number_input(
 )
 
 
-# ---------------- REMOVE IMAGES (WORKING + CLEAR UX) ---------------- #
+# ---------------- REMOVE IMAGES (WORKING + STABLE) ---------------- #
 st.subheader("Loaded Images")
 
-cols = 4
-for i in range(0, len(st.session_state.images), cols):
-    row = st.columns(cols)
+for idx in range(len(st.session_state.images)):
+    cols = st.columns([4, 1])
 
-    for j, col in enumerate(row):
-        idx = i + j
+    with cols[0]:
+        st.image(st.session_state.images[idx], width=120)
 
-        if idx < len(st.session_state.images):
-            with col:
-                st.image(st.session_state.images[idx], use_container_width=True)
-
-                if st.button("❌ Remove", key=f"rm_{idx}"):
-                    st.session_state.images.pop(idx)
-                    st.rerun()
+    with cols[1]:
+        if st.button("❌", key=f"rm_{idx}"):
+            st.session_state.images.pop(idx)
+            st.rerun()
 
 
 # ---------------- CLEAR ---------------- #

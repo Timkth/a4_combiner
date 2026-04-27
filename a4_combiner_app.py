@@ -158,13 +158,14 @@ st.session_state.margin = st.number_input(
 pages = get_pages()
 
 # Main layout: center preview + right export
-outer_left, outer_mid, outer_right = st.columns([1, 3, 1])
+col_left, col_mid, col_right = st.columns([1, 2, 1])
+
 
 # ---------------- CENTER COLUMN ---------------- #
-with outer_mid:
+with col_mid:
 
     # --- NAVIGATION (NOW PERFECTLY ALIGNED) --- #
-    nav1, nav2, nav3 = st.columns([1, 2, 1])
+    nav1, nav2, nav3 = st.columns([1.5, 2, 1.5], vertical_alignment="center")
 
     with nav1:
         if st.button("⬅ Prev"):
@@ -173,20 +174,20 @@ with outer_mid:
                 st.rerun()
 
     with nav2:
-        st.markdown(
-            f"""
-            <div style="
-                display:flex;
-                justify-content:center;
-                align-items:center;
-                height:38px;
-                font-weight:500;
-            ">
-                Page {st.session_state.page + 1} / {pages}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    st.markdown(
+        f"""
+        <div style="
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:38px;
+            font-weight:500;
+        ">
+            Page {st.session_state.page + 1} / {pages}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     with nav3:
         if st.button("Next ➡"):
@@ -198,21 +199,19 @@ with outer_mid:
     def generate_preview(page):
         full = generate_page(page, draw_boxes=True)
         preview = full.copy()
-        preview.thumbnail((400, 567))
+        preview.thumbnail((381, 540))
         return preview
 
     if st.session_state.images:
         preview = generate_preview(st.session_state.page)
-        st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
         st.image(preview)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     else:
         st.info("Upload images to begin")
 
 
 # ---------------- RIGHT COLUMN (EXPORT) ---------------- #
-with outer_right:
+with col_right:
     if st.session_state.images:
 
         def export_pdf():

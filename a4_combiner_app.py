@@ -190,13 +190,23 @@ with col_mid:
         )
 
     with nav3:
-        st.write("")  # small spacer
-        st.write("")  # add more spacing if needed
+        st.markdown(
+            """
+            <div style="
+                display:flex;
+                justify-content:flex-start;
+                padding-left:20px;
+            ">
+            """,
+            unsafe_allow_html=True
+        )
 
         if st.button("Next ➡"):
             if st.session_state.page < pages - 1:
                 st.session_state.page += 1
                 st.rerun()
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # --- PREVIEW --- #
     def generate_preview(page):

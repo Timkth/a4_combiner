@@ -21,21 +21,33 @@ if "page" not in st.session_state:
 if "margin" not in st.session_state:
     st.session_state.margin = 0
 
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
-# ---------------- UPLOAD ---------------- #
+
+# ---------------- UPLOAD (RESETTABLE) ---------------- #
 uploaded = st.file_uploader(
     "Upload images",
     type=["png", "jpg", "jpeg"],
-    accept_multiple_files=True
+    accept_multiple_files=True,
+    key=f"uploader_{st.session_state.uploader_key}"
 )
 
 if uploaded:
     for file in uploaded:
         data = file.read()
 
-        # prevent duplicates by raw bytes hash
+        # prevent duplicates by raw bytes
         if not any(img["data"] == data for img in st.session_state.images):
             st.session_state.images.append({"data": data})
+
+
+# ---------------- RESET BUTTON (THIS FIXES EVERYTHING) ---------------- #
+if st.button("🗑 Reset Uploads"):
+    st.session_state.images = []
+    st.session_state.page = 0
+    st.session_state.uploader_key += 1  # 🔥 forces uploader reset
+    st.rerun()
 
 
 # ---------------- IMAGE FIT ---------------- #
@@ -95,7 +107,7 @@ def get_pages():
 
 
 # ---------------- UI ---------------- #
-st.title("📄 A4 Image Combiner (Simple)")
+st.title("📄 A4 Image Combiner")
 
 
 # ---------------- MARGIN ---------------- #

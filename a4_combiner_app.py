@@ -23,21 +23,31 @@ def render_header():
     logo_bytes = base64.b64decode(LOGO_BASE64)
     image = Image.open(io.BytesIO(logo_bytes))
 
-    col1, col2 = st.columns([1, 6])
+    col1, col2 = st.columns([0.12, 0.88], vertical_alignment="center")
 
     with col1:
         st.image(image, width=70)
 
     with col2:
         st.markdown(
-            "<h2 style='margin-bottom:0;'>Paparazzi A4 Combiner</h2>",
+            """
+            <div style="
+                display:flex;
+                align-items:center;
+                height:70px;
+            ">
+                <div>
+                    <h2 style="margin:0; padding:0;">
+                        Paparazzi A4 Combiner
+                    </h2>
+                    <div style="color:gray; font-size:12px; margin-top:2px;">
+                        Create printable A4 image sheets
+                    </div>
+                </div>
+            </div>
+            """,
             unsafe_allow_html=True
         )
-        st.markdown(
-            "<p style='color:gray;margin-top:0;'>Create printable A4 image sheets</p>",
-            unsafe_allow_html=True
-        )
-
 
 render_header()
 
@@ -134,10 +144,6 @@ def get_pages():
     if not st.session_state.images:
         return 1
     return (len(st.session_state.images) - 1) // IMAGES_PER_PAGE + 1
-
-
-# ---------------- UI ---------------- #
-st.title("📄 A4 Image Combiner")
 
 
 # ---------------- MARGIN ---------------- #
